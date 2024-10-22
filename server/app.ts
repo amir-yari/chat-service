@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 
-import messagesRoutes from "./routes/messagesRoutes";
+import messagesRoutes from "./routes/messageRoutes";
 
 dotenv.config();
 

@@ -8,23 +8,44 @@ const socket = io("http://localhost:8000");
 
 const App = () => {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<
+    { text: string; sender: string; timestamp: string }[]
+  >([]);
+  const [senderId, setSenderId] = useState("user1");
+  const [receiverId, setReceiverId] = useState("user2");
 
   useEffect(() => {
-    socket.on("chat-message", (message: string) => {
-      console.log(message);
-      setMessages((prevMessages) => [...prevMessages, message]);
-    });
+    socket.on(
+      "chat-message",
+      (message: { text: string; sender: string; timestamp: string }) => {
+        console.log(message);
+        setMessages((prevMessages) => [...prevMessages, message]);
+      }
+    );
+
+    return () => {
+      socket.off("chat-message");
+    };
   }, []);
 
   const sendMessage = async () => {
     if (message.trim() !== "") {
-      socket.emit("sendMessage", message);
-      axios.post(sendMessageRoute, { text: message });
-      setMessage("");
+      const newMessage = {
+        text: message,
+        senderId,
+        receiverId,
+      };
+
+      socket.emit("sendMessage", newMessage);
+
+      try {
+        await axios.post(sendMessageRoute, newMessage);
+        setMessage("");
+      } catch (error) {
+        console.error("Failed to send message", error);
+      }
     }
   };
-
   return (
     <div>
       <h1>Real-Time Chat App (Testing)</h1>
@@ -32,7 +53,7 @@ const App = () => {
       <div>
         <h2>Messages</h2>
         {messages.map((msg, index) => (
-          <p key={index}>{msg}</p>
+          <p key={index}>{msg.text}</p>
         ))}
       </div>
 
