@@ -30,9 +30,16 @@ mongoose
   });
 
 io.on("connection", (socket: Socket) => {
-  console.log("A user connected:", socket.id);
+  console.log("User connected:", socket.id);
 
-  socket.on("sendMessage", (message: string) => {
-    socket.broadcast.emit("chat-message", message);
+  socket.on("sendMessage", async (messageData) => {
+    const { text, senderId, receiverId } = messageData;
+
+    io.to(receiverId).emit("chat-message", { text, senderId });
+    console.log("User connected:", socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
   });
 });

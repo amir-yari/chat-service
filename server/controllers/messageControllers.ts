@@ -1,5 +1,6 @@
 import Message from "../models/messageModel";
 import { RequestHandler } from "express";
+import { getSession } from "../services/sessionService";
 
 const addMessage: RequestHandler = async (req, res, next) => {
   try {
@@ -9,16 +10,19 @@ const addMessage: RequestHandler = async (req, res, next) => {
       res.status(400).json({ msg: "Missing required fields." });
     }
 
-    const data = await Message.create({
+    const sessionId = getSession(senderId, receiverId);
+
+    const message = await Message.create({
       text,
       senderId,
       receiverId,
+      sessionId,
     });
 
-    if (data) {
+    if (message) {
       res
         .status(201)
-        .json({ msg: "Message added successfully.", message: data });
+        .json({ msg: "Message added successfully.", message: message });
     } else {
       res.status(500).json({ msg: "Failed to add message to the database." });
     }

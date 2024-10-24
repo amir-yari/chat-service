@@ -3,6 +3,6 @@ import { addMessage } from "../controllers/messageControllers";
 
 const router = Router();
 
-router.post("/add-message", addMessage);
+router.post("/", addMessage);
 
 export default router;

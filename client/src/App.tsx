@@ -1,27 +1,26 @@
-import axios from "axios";
+// ChatApp.tsx
 import { useState, useEffect } from "react";
 import io from "socket.io-client";
-
-import { sendMessageRoute } from "../utils/apiRoutes";
+import axios from "axios";
 
 const socket = io("http://localhost:8000");
 
-const App = () => {
+const ChatApp = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<
-    { text: string; sender: string; timestamp: string }[]
+    { text: string; senderId: string; timestamp: string }[]
   >([]);
-  const [senderId, setSenderId] = useState("user1");
-  const [receiverId, setReceiverId] = useState("user2");
+  const [senderId] = useState("user1"); // For testing, this could be hardcoded
+  const [receiverId] = useState("user2"); // Likewise, hardcoded for testing
 
   useEffect(() => {
-    socket.on(
-      "chat-message",
-      (message: { text: string; sender: string; timestamp: string }) => {
-        console.log(message);
-        setMessages((prevMessages) => [...prevMessages, message]);
-      }
-    );
+    // Listen for incoming chat messages
+    socket.on("chat-message", (msg: { text: string; senderId: string }) => {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { ...msg, timestamp: new Date().toISOString() },
+      ]);
+    });
 
     return () => {
       socket.off("chat-message");
@@ -29,45 +28,49 @@ const App = () => {
   }, []);
 
   const sendMessage = async () => {
-    if (message.trim() !== "") {
+    if (message.trim()) {
       const newMessage = {
         text: message,
         senderId,
         receiverId,
       };
 
+      // Send the message via socket to notify other users
       socket.emit("sendMessage", newMessage);
 
+      // Send the message to the backend to store in the database
       try {
-        await axios.post(sendMessageRoute, newMessage);
-        setMessage("");
+        await axios.post("http://localhost:8000/api/message/", newMessage);
+        setMessage(""); // Clear the input after sending
       } catch (error) {
         console.error("Failed to send message", error);
       }
     }
   };
+
   return (
     <div>
-      <h1>Real-Time Chat App (Testing)</h1>
-
+      <h1>One-on-One Chat App</h1>
       <div>
         <h2>Messages</h2>
-        {messages.map((msg, index) => (
-          <p key={index}>{msg.text}</p>
-        ))}
+        <div>
+          {messages.map((msg, index) => (
+            <p key={index}>
+              <strong>{msg.senderId}:</strong> {msg.text}{" "}
+              <em>({new Date(msg.timestamp).toLocaleTimeString()})</em>
+            </p>
+          ))}
+        </div>
       </div>
-
-      <div>
-        <input
-          type="text"
-          placeholder="Enter message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <button onClick={sendMessage}>Send</button>
-      </div>
+      <input
+        type="text"
+        placeholder="Enter your message..."
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+      <button onClick={sendMessage}>Send</button>
     </div>
   );
 };
 
-export default App;
+export default ChatApp;
