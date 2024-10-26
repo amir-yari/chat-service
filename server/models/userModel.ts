@@ -1,59 +1,38 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const Schema = mongoose.Schema;
+export interface User {
+  _id: mongoose.Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  profileImage?: string;
+}
 
-const userSchema = new Schema(
+const userSchema: Schema<User> = new mongoose.Schema(
   {
+    firstName: {
+      type: String,
+      required: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+    },
     username: {
       type: String,
       required: true,
       unique: true,
     },
-    // email: {
-    //   type: String,
-    //   required: true,
-    //   unique: true,
-    // },
-    // password: {
-    //   type: String,
-    //   required: true,
-    // },
-    // profilePicture: {
-    //   type: String,
-    //   default: "",
-    // },
-    // bio: {
-    //   type: String,
-    //   maxlength: 500,
-    // },
-    // gender: {
-    //   type: String,
-    //   enum: ["Male", "Female", "Other"],
-    //   required: true,
-    // },
-    // age: {
-    //   type: Number,
-    //   required: true,
-    //   min: 18,
-    // },
-    // interests: {
-    //   type: [String],
-    //   default: [],
-    // },
-    // location: {
-    //   city: {
-    //     type: String,
-    //   },
-    //   country: {
-    //     type: String,
-    //   },
-    // },
-    // lastOnline: {
-    //   type: Date,
-    //   default: Date.now,
-    // },
+    email: {
+      type: String,
+      required: true,
+    },
+    profileImage: {
+      type: String,
+    },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model<User>("User", userSchema);
