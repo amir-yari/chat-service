@@ -1,27 +1,19 @@
-import {
-  CheckOutlined,
-  DotChartOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
-import { Dropdown, Space } from "antd";
+import { CheckOutlined, MoreOutlined } from "@ant-design/icons";
+import { Dropdown } from "antd";
 import type { MenuProps } from "antd";
 
 const items: MenuProps["items"] = [
   {
-    label: "Reply Kon",
+    label: "Reply",
     key: "1",
   },
   {
-    label: "Kiresho Bokhor",
+    label: "Forward",
     key: "2",
   },
   {
-    label: "Kiramo Bokhor",
+    label: "More",
     key: "3",
-  },
-  {
-    label: "Kir sho",
-    key: "4",
   },
 ];
 
@@ -32,7 +24,7 @@ interface ChatBodyProps {
 const ChatBody = ({ messages }: ChatBodyProps) => {
   return (
     <div className="flex flex-col flex-grow overflow-x-hidden overflow-y-auto  gap-1">
-      {/* Amir Koskesh In o khodam neveshtam : In male taraf Moghabele  */}
+      {/* Chat Type from sender  */}
       <div
         className="flex flex-row gap-2 max-w-[800px] max-w- w-full mx-auto "
         dir="ltr"
@@ -61,7 +53,7 @@ const ChatBody = ({ messages }: ChatBodyProps) => {
           </a>
         </Dropdown>
       </div>
-      {/* inam male nevisande koonie */}
+      {/* Chat Type from reciever */}
       <div className=" gap-2 max-w-[800px] w-full mx-auto  " dir="rtl">
         {messages.map((msg) => (
           <div className="flex flex-col max-w-[90%] w-fit h-fit p-2 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl dark:bg-gray-700 m-[3px]">

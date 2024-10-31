@@ -3,11 +3,11 @@ import HistoryList from "./HistoryList";
 export type isMobileType = {
   isMobile: boolean;
 };
-const HistoryChat = ({ isMobile }: isMobileType) => {
+const HistoryChat = () => {
   return (
     <div className="flex flex-col flex-grow overflow-hidden bg-white ">
       <HistoryHeader />
-      <HistoryList isMobile={isMobile} />
+      <HistoryList />
     </div>
   );
 };

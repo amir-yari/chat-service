@@ -28,7 +28,7 @@ const data = [
   },
 ];
 
-const HistoryList = ({ isMobile }: isMobileType) => {
+const HistoryList = () => {
   const navigate = useNavigate();
   const navigateHandler = () => {
     navigate("/");
