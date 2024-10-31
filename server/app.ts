@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 
-import messagesRoutes from "./routes/messageRoutes";
+import messageRoutes from "./routes/messageRoutes";
 
 dotenv.config();
 
@@ -21,6 +21,6 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/message", messagesRoutes);
+app.use("/message", messageRoutes);
 
 export default app;

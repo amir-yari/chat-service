@@ -1,11 +1,10 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface Message {
-  _id: mongoose.Types.ObjectId;
   text: string;
-  senderId: mongoose.Types.ObjectId;
-  receiverId: mongoose.Types.ObjectId;
-  sessionId: mongoose.Types.ObjectId;
+  senderId: string;
+  receiverId: string;
+  sessionId: mongoose.Types.ObjectId | string | undefined;
 }
 
 const messageSchema: Schema<Message> = new mongoose.Schema(
@@ -15,11 +14,11 @@ const messageSchema: Schema<Message> = new mongoose.Schema(
       required: true,
     },
     senderId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true,
     },
     receiverId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true,
     },
     sessionId: {
