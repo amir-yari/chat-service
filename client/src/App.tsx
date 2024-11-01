@@ -1,74 +1,134 @@
-// ChatApp.tsx
 import { useState, useEffect } from "react";
 import io from "socket.io-client";
 import axios from "axios";
 
-const socket = io("http://localhost:8000");
-
 const ChatApp = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<
-    { text: string; senderId: string; timestamp: string }[]
+    { text: string; senderId: string }[]
   >([]);
-  const [senderId] = useState("user1"); // For testing, this could be hardcoded
-  const [receiverId] = useState("user2"); // Likewise, hardcoded for testing
+  const [userId, setUserId] = useState(""); // State for user ID
+  const [socket, setSocket] = useState(null); // State for the socket instance
 
+  // Establish socket connection when userId changes
   useEffect(() => {
-    // Listen for incoming chat messages
-    socket.on("chat-message", (msg: { text: string; senderId: string }) => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { ...msg, timestamp: new Date().toISOString() },
-      ]);
+    const newSocket = io("http://localhost:8000", {
+      query: { userId },
+    });
+
+    //@ts-ignore
+    setSocket(newSocket); // Store the socket instance
+
+    newSocket.on("receiveMessage", (message: any) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+      console.log(message);
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
     });
 
     return () => {
-      socket.off("chat-message");
+      newSocket.disconnect(); // Clean up the socket connection on unmount
     };
-  }, []);
+  }, [userId]);
 
   const sendMessage = async () => {
-    if (message.trim()) {
-      const newMessage = {
-        text: message,
-        senderId,
-        receiverId,
-      };
+    if (!socket) return; // Ensure socket is defined
 
-      // Send the message via socket to notify other users
-      socket.emit("sendMessage", newMessage);
+    const newMessage = { text: message, senderId }; // Construct new message
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    //@ts-ignore
+    socket.emit("sendMessage", newMessage);
 
-      // Send the message to the backend to store in the database
-      try {
-        await axios.post("http://localhost:8000/api/message/", newMessage);
-        setMessage(""); // Clear the input after sending
-      } catch (error) {
-        console.error("Failed to send message", error);
-      }
-    }
+    // try {
+    //   await axios.post("http://localhost:8000/api/message/", newMessage);
+    //   setMessage(""); // Clear input
+    // } catch (error) {
+    //   console.error("Failed to send message", error);
+    // }
   };
 
   return (
-    <div>
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
       <h1>One-on-One Chat App</h1>
-      <div>
-        <h2>Messages</h2>
+      {!userId ? ( // Show user ID input if not set
         <div>
-          {messages.map((msg, index) => (
-            <p key={index}>
-              <strong>{msg.senderId}:</strong> {msg.text}{" "}
-              <em>({new Date(msg.timestamp).toLocaleTimeString()})</em>
-            </p>
-          ))}
+          <input
+            type="text"
+            placeholder="Enter your User ID..."
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            style={{
+              padding: "10px",
+              width: "80%",
+              marginRight: "5px",
+              borderRadius: "5px",
+              border: "1px solid #ddd",
+            }}
+          />
+          <button
+            onClick={() => setUserId(userId)} // Set user ID
+            style={{
+              padding: "10px 15px",
+              backgroundColor: "#007bff",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+          >
+            Connect
+          </button>
         </div>
-      </div>
-      <input
-        type="text"
-        placeholder="Enter your message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
-      <button onClick={sendMessage}>Send</button>
+      ) : (
+        <div>
+          <div
+            style={{
+              border: "1px solid #ddd",
+              padding: "10px",
+              borderRadius: "5px",
+              maxHeight: "400px",
+              overflowY: "scroll",
+            }}
+          >
+            <h2>Messages</h2>
+            {messages.map((msg, index) => (
+              <div key={index} style={{ marginBottom: "10px" }}>
+                <strong>{msg.senderId}:</strong> {msg.text}
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: "10px" }}>
+            <input
+              type="text"
+              placeholder="Enter your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              style={{
+                padding: "10px",
+                width: "80%",
+                marginRight: "5px",
+                borderRadius: "5px",
+                border: "1px solid #ddd",
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              style={{
+                padding: "10px 15px",
+                backgroundColor: "#007bff",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
