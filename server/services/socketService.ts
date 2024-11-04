@@ -1,7 +1,11 @@
 import { Socket } from "socket.io";
 import z from "zod";
 import mongoose from "mongoose";
-import { ClientToServerEvent, io, ServerToClientEvent } from "../server";
+import {
+  type ClientToServerEvent,
+  type ServerToClientEvent,
+  io,
+} from "../server";
 import { Message } from "../models/messageModel";
 import { storeMessage } from "./sessionService";
 

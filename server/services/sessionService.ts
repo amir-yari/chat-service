@@ -1,5 +1,6 @@
 import MessageModel, { type Message } from "./../models/messageModel";
 import SessionModel from "./../models/sessionModel";
+import { ClientErrors, ServerErrors } from "@mssd/errors";
 
 const DEFAULT_SESSION_LIMIT = 100;
 const MAX_SESSION_LIMIT = 1000;
@@ -24,7 +25,7 @@ const storeMessage = async (message: Message) => {
 
         return savedMessage;
       } else {
-        throw new Error("Session not found");
+        throw ClientErrors.NotFoundError;
       }
     } else {
       const newSession = await SessionModel.create({
@@ -40,8 +41,7 @@ const storeMessage = async (message: Message) => {
       return savedMessage;
     }
   } catch (error) {
-    console.error("Error storing message:", error);
-    throw error;
+    throw ServerErrors.InternalServerError;
   }
 };
 
@@ -52,28 +52,34 @@ const loadMessages = async (
   sessionPage: number = 1,
   messagePage: number = 1
 ) => {
-  const finalSessionLimit = Math.min(sessionLimit, MAX_SESSION_LIMIT);
-  const sessionSkip = finalSessionLimit * (sessionPage - 1);
+  try {
+    const finalSessionLimit = Math.min(sessionLimit, MAX_SESSION_LIMIT);
+    const sessionSkip = finalSessionLimit * (sessionPage - 1);
 
-  const finalMessageLimit = Math.min(messageLimit, MAX_MESSAGE_LIMIT);
-  const messageSkip = finalMessageLimit * (messagePage - 1);
+    const finalMessageLimit = Math.min(messageLimit, MAX_MESSAGE_LIMIT);
+    const messageSkip = finalMessageLimit * (messagePage - 1);
 
-  const sessions = await SessionModel.find({ participants: userId })
-    .sort({ updatedAt: -1 })
-    .skip(sessionSkip)
-    .limit(finalSessionLimit);
+    const sessions = await SessionModel.find({ participants: userId })
+      .sort({ updatedAt: -1 })
+      .skip(sessionSkip)
+      .limit(finalSessionLimit);
 
-  const sessionIds = sessions.map((session) => session._id);
+    const sessionIds = sessions.map((session) => session._id);
 
-  const messages = await MessageModel.find({
-    sessionId: { $in: sessionIds },
-  })
-    .sort({ createdAt: -1 })
-    .skip(messageSkip)
-    .populate("sessionId")
-    .limit(finalMessageLimit)
-    .exec();
-  return messages;
+    const messages = await MessageModel.find({
+      sessionId: { $in: sessionIds },
+    })
+      .sort({ createdAt: -1 })
+      .skip(messageSkip)
+      .populate("sessionId")
+      .limit(finalMessageLimit)
+      .exec();
+
+    return messages;
+  } catch (error) {
+    console.error("Error loading messages:", error);
+    throw ServerErrors.InternalServerError;
+  }
 };
 
 export { storeMessage, loadMessages };
