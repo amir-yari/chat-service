@@ -37,7 +37,7 @@ const ChatPage = () => {
     const socketInstance = io("http://localhost:8000");
     setSocket(socketInstance);
 
-    socketInstance.on("connect", () => {
+    socketInstance.on("connection", () => {
       console.log("Connected to Socket.IO server");
       setIsConnected(true);
     });
