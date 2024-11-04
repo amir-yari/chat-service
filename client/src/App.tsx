@@ -1,76 +1,73 @@
-// ChatApp.tsx
-import { useState, useEffect } from "react";
-import io from "socket.io-client";
-import axios from "axios";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import RootLayout from "./pages/Root";
+import ChatPage from "./pages/ChatPage";
+import HistoryChat from "./components/chat-history/HistoryChat";
+import ChatConnectionForm from "./pages/testLogin";
 
-const socket = io("http://localhost:8000");
+// import axios from "axios";
+// import { useState, useEffect } from "react";
+// import { io, Socket } from "socket.io-client";
+// import { useEffect, useState } from "react";
+// import { useSelector } from "react-redux";
+// import { RootState } from "./store/store";
+// import { sendMessageRoute } from "../utils/apiRoutes";
 
-const ChatApp = () => {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<
-    { text: string; senderId: string; timestamp: string }[]
-  >([]);
-  const [senderId] = useState("user1"); // For testing, this could be hardcoded
-  const [receiverId] = useState("user2"); // Likewise, hardcoded for testing
+// const socket = io("http://localhost:8000");
 
-  useEffect(() => {
-    // Listen for incoming chat messages
-    socket.on("chat-message", (msg: { text: string; senderId: string }) => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { ...msg, timestamp: new Date().toISOString() },
-      ]);
-    });
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    // errorElement: ,
+    children: [
+      { index: true, path: "/", element: <ChatConnectionForm /> },
+      { path: "/home", element: <ChatPage /> },
+      { path: "/a", element: <HistoryChat /> },
+    ],
+  },
+]);
 
-    return () => {
-      socket.off("chat-message");
-    };
-  }, []);
+const App = () => {
+  // const [message, setMessage] = useState("");
+  // const [messages, setMessages] = useState<string[]>([]);
 
-  const sendMessage = async () => {
-    if (message.trim()) {
-      const newMessage = {
-        text: message,
-        senderId,
-        receiverId,
-      };
+  // useEffect(() => {
+  //   socket.on("chat-message", (message: string) => {
+  //     console.log(message);
+  //     setMessages((prevMessages) => [...prevMessages, message]);
+  //   });
+  // }, []);
 
-      // Send the message via socket to notify other users
-      socket.emit("sendMessage", newMessage);
+  // const sendMessage = async () => {
+  //   if (message.trim() !== "") {
+  //     socket.emit("sendMessage", message);
+  //     axios.post(sendMessageRoute, { text: message });
+  //     setMessage("");
+  //   }
+  // };
 
-      // Send the message to the backend to store in the database
-      try {
-        await axios.post("http://localhost:8000/api/message/", newMessage);
-        setMessage(""); // Clear the input after sending
-      } catch (error) {
-        console.error("Failed to send message", error);
-      }
-    }
-  };
+  return <RouterProvider router={router} />;
 
-  return (
-    <div>
-      <h1>One-on-One Chat App</h1>
-      <div>
-        <h2>Messages</h2>
-        <div>
-          {messages.map((msg, index) => (
-            <p key={index}>
-              <strong>{msg.senderId}:</strong> {msg.text}{" "}
-              <em>({new Date(msg.timestamp).toLocaleTimeString()})</em>
-            </p>
-          ))}
-        </div>
-      </div>
-      <input
-        type="text"
-        placeholder="Enter your message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
-      <button onClick={sendMessage}>Send</button>
-    </div>
-  );
+  // <div>
+  //   <h1>Real-Time Chat App (Testing)</h1>
+
+  //   <div>
+  //     <h2>Messages</h2>
+  //     {messages.map((msg, index) => (
+  //       <p key={index}>{msg}</p>
+  //     ))}
+  //   </div>
+
+  //   <div>
+  //     <input
+  //       type="text"
+  //       placeholder="Enter message"
+  //       value={message}
+  //       onChange={(e) => setMessage(e.target.value)}
+  //     />
+  //     <button onClick={sendMessage}>Send</button>
+  //   </div>
+  // </div>
 };
 
-export default ChatApp;
+export default App;
