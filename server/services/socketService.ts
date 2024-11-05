@@ -26,9 +26,12 @@ const addMessageSchema = z.object({
   //       message: "Invalid ObjectID format for sessionId",
   //     })
   //     .optional(),
-  senderId: z.string().min(1),
-  receiverId: z.string().min(1),
-  sessionId: z.string().min(1).optional(),
+  senderId: z.string().min(1, { message: "Message text must not be empty" }),
+  receiverId: z.string().min(1, { message: "Sender ID is required" }),
+  sessionId: z
+    .string()
+    .min(1, { message: "Receiver ID is required" })
+    .optional(),
 });
 
 const userSocketMap = new Map();
@@ -36,45 +39,62 @@ const userSocketMap = new Map();
 export const socketService = () => {
   io.on(
     "connection",
-    async (socket: Socket<ClientToServerEvent, ServerToClientEvent>) => {
-      console.log("New client connected", socket.id);
+    (socket: Socket<ClientToServerEvent, ServerToClientEvent>) => {
       const userId = socket.handshake.query.userId;
+      if (!userId) {
+        socket.emit("error", { message: "User ID is required to connect." });
+        socket.disconnect();
+        return;
+      }
+
       userSocketMap.set(userId, socket.id);
 
       socket.on("sendMessage", async (data) => {
-        const result = await addMessageSchema.safeParseAsync(data);
+        try {
+          const parsedData = typeof data === "string" ? JSON.parse(data) : data;
 
-        if (!result.success) {
-          console.log("Validation error:", result.error.errors);
-          return;
+          const result = await addMessageSchema.safeParseAsync(parsedData);
+          if (!result.success) {
+            socket.emit("error", {
+              message: "Invalid message data",
+              details: result.error.errors,
+            });
+            return;
+          }
+
+          const message = result.data;
+
+          const savedMessage: Message = await storeMessage({
+            text: message.text,
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            sessionId: message.sessionId,
+          });
+
+          socket.join(savedMessage.sessionId as string);
+
+          const receiverSocketId = userSocketMap.get(savedMessage.receiverId);
+          const receiverSocket = io.sockets.sockets.get(receiverSocketId);
+
+          if (receiverSocket) {
+            receiverSocket.join(savedMessage.sessionId as string);
+            io.to(savedMessage.sessionId as string).emit(
+              "receiveMessage",
+              savedMessage
+            );
+          } else {
+            //TODO: handle the situation when the receiver is not connected
+          }
+        } catch (err) {
+          socket.emit("error", {
+            message: "Failed to process the message. Please try again later.",
+            details: [err],
+          });
         }
-
-        const message = result.data;
-
-        const savedMessage: Message = await storeMessage({
-          text: message.text,
-          senderId: message.senderId,
-          receiverId: message.receiverId,
-          sessionId: message.sessionId,
-        });
-
-        socket.join(savedMessage.sessionId as string);
-
-        const receiverSocketId = userSocketMap.get(savedMessage.receiverId);
-        const receiverSocket = io.sockets.sockets.get(receiverSocketId);
-
-        if (receiverSocket) {
-          receiverSocket.join(savedMessage.sessionId as string);
-        }
-
-        io.to(savedMessage.sessionId as string).emit(
-          "receiveMessage",
-          savedMessage
-        );
       });
 
       socket.on("disconnect", () => {
-        console.log("Client disconnected", socket.id);
+        userSocketMap.delete(userId);
       });
     }
   );

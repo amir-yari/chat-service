@@ -25,7 +25,9 @@ const storeMessage = async (message: Message) => {
 
         return savedMessage;
       } else {
-        throw ClientErrors.NotFoundError;
+        throw new ClientErrors.NotFoundError(
+          "Session ID is not in the database"
+        );
       }
     } else {
       const newSession = await SessionModel.create({
@@ -40,8 +42,8 @@ const storeMessage = async (message: Message) => {
       });
       return savedMessage;
     }
-  } catch (error) {
-    throw ServerErrors.InternalServerError;
+  } catch (error: any) {
+    throw new ServerErrors.InternalServerError("", error);
   }
 };
 
@@ -76,9 +78,8 @@ const loadMessages = async (
       .exec();
 
     return messages;
-  } catch (error) {
-    console.error("Error loading messages:", error);
-    throw ServerErrors.InternalServerError;
+  } catch (error: any) {
+    throw new ServerErrors.InternalServerError("", error);
   }
 };
 

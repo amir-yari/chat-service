@@ -4,10 +4,9 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
 
-import messageRoutes from "./routes/messageRoutes";
 import swaggerDocs from "./swagger";
-import { io } from "./server";
-import { socketService } from "./services/socketService";
+import messageRoutes from "./routes/messageRoutes";
+import uploadRoutes from "./routes/uploadRoutes";
 
 dotenv.config();
 
@@ -28,5 +27,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.use("/message", messageRoutes);
+app.use("/upload", uploadRoutes);
 
 export default app;

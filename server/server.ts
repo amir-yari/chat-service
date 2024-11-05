@@ -8,6 +8,7 @@ import { type Message } from "./models/messageModel";
 import { socketService } from "./services/socketService";
 export interface ServerToClientEvent {
   receiveMessage: (message: Message) => void;
+  error: (error: { message: string; details?: any[] }) => void;
 }
 export interface ClientToServerEvent {
   sendMessage: (message: Message) => void;
@@ -41,6 +42,7 @@ export const io = new SocketIOServer<ClientToServerEvent, ServerToClientEvent>(
   }
 );
 
+socketService();
 io.use((socket, next) => {
-  socketService();
+  next();
 });
