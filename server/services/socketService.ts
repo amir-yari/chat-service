@@ -6,8 +6,9 @@ import {
   type ServerToClientEvent,
   io,
 } from "../server";
-import { Message } from "../models/messageModel";
+import { EncryptedMessage, type Message } from "../models/messageModel";
 import { storeMessage } from "./sessionService";
+import { decryptMessage } from "../utils/encryption";
 
 const isValidObjectId = (id: string | undefined) =>
   !!id && mongoose.Types.ObjectId.isValid(id);
@@ -51,8 +52,8 @@ export const socketService = () => {
 
       socket.on("sendMessage", async (data) => {
         try {
-          const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-
+          //@ts-ignore
+          const parsedData = JSON.parse(data);
           const result = await addMessageSchema.safeParseAsync(parsedData);
           if (!result.success) {
             socket.emit("error", {
@@ -71,17 +72,20 @@ export const socketService = () => {
             sessionId: message.sessionId,
           });
 
-          socket.join(savedMessage.sessionId as string);
+          const messageSessionId: string = savedMessage.sessionId as string;
+
+          socket.join(messageSessionId);
 
           const receiverSocketId = userSocketMap.get(savedMessage.receiverId);
           const receiverSocket = io.sockets.sockets.get(receiverSocketId);
 
+          const decryptedMessage: Message = decryptMessage(
+            savedMessage as EncryptedMessage
+          );
+
           if (receiverSocket) {
-            receiverSocket.join(savedMessage.sessionId as string);
-            io.to(savedMessage.sessionId as string).emit(
-              "receiveMessage",
-              savedMessage
-            );
+            receiverSocket.join(messageSessionId);
+            io.to(messageSessionId).emit("receiveMessage", decryptedMessage);
           } else {
             //TODO: handle the situation when the receiver is not connected
           }

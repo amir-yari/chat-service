@@ -1,6 +1,7 @@
 import MessageModel, { type Message } from "./../models/messageModel";
 import SessionModel from "./../models/sessionModel";
 import { ClientErrors, ServerErrors } from "@mssd/errors";
+import { encryptMessage, decryptMessage } from "../utils/encryption";
 
 const DEFAULT_SESSION_LIMIT = 100;
 const MAX_SESSION_LIMIT = 1000;
@@ -16,11 +17,13 @@ const storeMessage = async (message: Message) => {
         { new: true }
       );
       if (session) {
+        const encryptedMessage = encryptMessage(message);
         const savedMessage = await MessageModel.create({
-          text: message.text,
-          senderId: message.senderId,
-          receiverId: message.receiverId,
-          sessionId: message.sessionId,
+          text: encryptedMessage.text,
+          senderId: encryptedMessage.senderId,
+          receiverId: encryptedMessage.receiverId,
+          sessionId: encryptedMessage.sessionId,
+          iv: encryptedMessage.iv,
         });
 
         return savedMessage;
@@ -34,12 +37,16 @@ const storeMessage = async (message: Message) => {
         participants: [message.senderId, message.receiverId],
       });
 
+      const encryptedMessage = encryptMessage(message);
+      console.log(encryptedMessage);
       const savedMessage = await MessageModel.create({
-        text: message.text,
-        senderId: message.senderId,
-        receiverId: message.receiverId,
+        text: encryptedMessage.text,
+        senderId: encryptedMessage.senderId,
+        receiverId: encryptedMessage.receiverId,
         sessionId: newSession._id,
+        iv: encryptedMessage.iv,
       });
+      console.log(savedMessage);
       return savedMessage;
     }
   } catch (error: any) {
@@ -68,7 +75,7 @@ const loadMessages = async (
 
     const sessionIds = sessions.map((session) => session._id);
 
-    const messages = await MessageModel.find({
+    const encryptedMessages = await MessageModel.find({
       sessionId: { $in: sessionIds },
     })
       .sort({ createdAt: -1 })
@@ -76,6 +83,17 @@ const loadMessages = async (
       .populate("sessionId")
       .limit(finalMessageLimit)
       .exec();
+
+    const messages = encryptedMessages.map((message) => ({
+      ...message.toObject(),
+      text: decryptMessage({
+        iv: message.iv,
+        text: message.text,
+        senderId: message.senderId,
+        receiverId: message.receiverId,
+        sessionId: message.sessionId,
+      }).text,
+    }));
 
     return messages;
   } catch (error: any) {

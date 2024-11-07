@@ -7,7 +7,15 @@ export interface Message {
   sessionId: mongoose.Types.ObjectId | string | undefined;
 }
 
-const messageSchema: Schema<Message> = new mongoose.Schema(
+export interface EncryptedMessage {
+  text: string;
+  senderId: string;
+  receiverId: string;
+  sessionId: mongoose.Types.ObjectId | string | undefined;
+  iv: string;
+}
+
+const messageSchema: Schema<EncryptedMessage> = new mongoose.Schema(
   {
     text: {
       type: String,
@@ -26,8 +34,9 @@ const messageSchema: Schema<Message> = new mongoose.Schema(
       required: true,
       ref: "Session",
     },
+    iv: { type: String, required: true },
   },
   { timestamps: true }
 );
 
-export default mongoose.model<Message>("Message", messageSchema);
+export default mongoose.model<EncryptedMessage>("Message", messageSchema);

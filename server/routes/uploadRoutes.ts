@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { ClientErrors } from "@mssd/errors";
 import path from "node:path";
-import { patchFile } from "../controllers/uploadControllers";
+import { uploadFile } from "../controllers/uploadControllers";
 
 const router = Router();
 
@@ -65,6 +65,6 @@ const upload = multer({
   },
 });
 
-router.post("/", upload.single("file"), patchFile);
+router.post("/", upload.single("file"), uploadFile);
 
 export default router;

@@ -1,7 +1,7 @@
 import { type RequestHandler } from "express";
 import { ServerErrors } from "@mssd/errors";
 
-const patchFile: RequestHandler = async (req, res, next) => {
+const uploadFile: RequestHandler = async (req, res, next) => {
   try {
     res
       .status(200)
@@ -14,4 +14,4 @@ const patchFile: RequestHandler = async (req, res, next) => {
   }
 };
 
-export { patchFile };
+export { uploadFile };
