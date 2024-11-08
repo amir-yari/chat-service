@@ -1,4 +1,7 @@
-import MessageModel, { type Message } from "./../models/messageModel";
+import MessageModel, {
+  MessageStatus,
+  type Message,
+} from "./../models/messageModel";
 import SessionModel from "./../models/sessionModel";
 import { ClientErrors, ServerErrors } from "@mssd/errors";
 import { encryptMessage, decryptMessage } from "../utils/encryption";
@@ -38,7 +41,6 @@ const storeMessage = async (message: Message) => {
       });
 
       const encryptedMessage = encryptMessage(message);
-      console.log(encryptedMessage);
       const savedMessage = await MessageModel.create({
         text: encryptedMessage.text,
         senderId: encryptedMessage.senderId,
@@ -46,7 +48,6 @@ const storeMessage = async (message: Message) => {
         sessionId: newSession._id,
         iv: encryptedMessage.iv,
       });
-      console.log(savedMessage);
       return savedMessage;
     }
   } catch (error: any) {
@@ -92,6 +93,7 @@ const loadMessages = async (
         senderId: message.senderId,
         receiverId: message.receiverId,
         sessionId: message.sessionId,
+        status: message.status,
       }).text,
     }));
 
@@ -101,4 +103,44 @@ const loadMessages = async (
   }
 };
 
-export { storeMessage, loadMessages };
+const updateMessageStatus = async (
+  messageId: string,
+  status: MessageStatus
+) => {
+  try {
+    const updatedMessage = await MessageModel.findByIdAndUpdate(
+      messageId,
+      { status, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!updatedMessage) {
+      throw new ClientErrors.NotFoundError("Message ID is not in the database");
+    }
+
+    return updatedMessage;
+  } catch (error: any) {
+    throw new ServerErrors.InternalServerError("", error);
+  }
+};
+
+const markMessagesAsRead = async (
+  sessionId: string,
+  senderId: string,
+  receiverId: string
+) => {
+  try {
+    await MessageModel.updateMany(
+      {
+        sessionId,
+        receiverId,
+        status: { $ne: MessageStatus.READ },
+      },
+      { status: MessageStatus.READ }
+    );
+  } catch (error: any) {
+    throw new ServerErrors.InternalServerError("", error);
+  }
+};
+
+export { storeMessage, loadMessages, updateMessageStatus, markMessagesAsRead };

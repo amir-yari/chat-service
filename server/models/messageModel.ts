@@ -1,17 +1,24 @@
 import mongoose, { Schema } from "mongoose";
 
-export interface Message {
-  text: string;
-  senderId: string;
-  receiverId: string;
-  sessionId: mongoose.Types.ObjectId | string | undefined;
+export enum MessageStatus {
+  PENDING = "pending",
+  SENT = "sent",
+  DELIVERED = "delivered",
+  READ = "read",
 }
 
-export interface EncryptedMessage {
+export interface Message {
+  _id?: mongoose.Types.ObjectId | string;
   text: string;
   senderId: string;
   receiverId: string;
-  sessionId: mongoose.Types.ObjectId | string | undefined;
+  sessionId?: mongoose.Types.ObjectId | string;
+  status?: MessageStatus;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface EncryptedMessage extends Message {
   iv: string;
 }
 
@@ -33,6 +40,12 @@ const messageSchema: Schema<EncryptedMessage> = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: "Session",
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: Object.values(MessageStatus),
+      default: MessageStatus.PENDING,
     },
     iv: { type: String, required: true },
   },

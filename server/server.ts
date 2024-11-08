@@ -4,15 +4,11 @@ import express from "express";
 import mongoose from "mongoose";
 import { Server as SocketIOServer } from "socket.io";
 
-import { type Message } from "./models/messageModel";
 import { socketService } from "./services/socketService";
-export interface ServerToClientEvent {
-  receiveMessage: (message: Message) => void;
-  error: (error: { message: string; details?: any[] }) => void;
-}
-export interface ClientToServerEvent {
-  sendMessage: (message: Message) => void;
-}
+import {
+  type ClientToServerEvent,
+  type ServerToClientEvent,
+} from "./utils/socketEventsTypes";
 
 const port = process.env.PORT || 8000;
 const app = express();
