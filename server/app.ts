@@ -7,6 +7,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocs from "./swagger";
 import messageRoutes from "./routes/messageRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
+import accountRoutes from "./routes/accountRoutes";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
+app.use("/account", accountRoutes);
 app.use("/message", messageRoutes);
 app.use("/upload", uploadRoutes);
 

@@ -15,6 +15,7 @@ import {
   markMessagesAsRead,
   storeMessage,
   updateMessageStatus,
+  getContactsStatus,
 } from "./sessionService";
 import { decryptMessage } from "../utils/encryption";
 
@@ -66,7 +67,7 @@ const requestMessageReadSchema = z.object({
 
 const userSocketMap = new Map();
 
-export const socketService = () => {
+export const socketService = async () => {
   io.on(
     "connection",
     (socket: Socket<ClientToServerEvent, ServerToClientEvent>) => {
@@ -78,6 +79,18 @@ export const socketService = () => {
       }
 
       userSocketMap.set(userId, socket.id);
+
+      (async () => {
+        try {
+          const contactStatus = await getContactsStatus(userId as string);
+          socket.emit("contactsStatus", contactStatus);
+        } catch (err) {
+          socket.emit("error", {
+            message: "Failed to get contact status.",
+            details: [err],
+          });
+        }
+      })();
 
       socket.on("sendMessage", async (data) => {
         try {
@@ -164,7 +177,7 @@ export const socketService = () => {
           const senderId = result.data.senderId;
           const receiverId = result.data.receiverId;
 
-          await markMessagesAsRead(sessionId, senderId, receiverId);
+          await markMessagesAsRead(sessionId, receiverId);
           const senderSocketId = userSocketMap.get(senderId);
           const senderSocket = io.sockets.sockets.get(senderSocketId);
 

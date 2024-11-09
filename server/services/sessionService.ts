@@ -3,7 +3,8 @@ import MessageModel, {
   type Message,
 } from "./../models/messageModel";
 import SessionModel from "./../models/sessionModel";
-import { ClientErrors, ServerErrors } from "@mssd/errors";
+import UserModel, { User } from "../models/userModel";
+import { ClientErrors, InternalServerError, ServerErrors } from "@mssd/errors";
 import { encryptMessage, decryptMessage } from "../utils/encryption";
 
 const DEFAULT_SESSION_LIMIT = 100;
@@ -82,8 +83,7 @@ const loadMessages = async (
       .sort({ createdAt: -1 })
       .skip(messageSkip)
       .populate("sessionId")
-      .limit(finalMessageLimit)
-      .exec();
+      .limit(finalMessageLimit);
 
     const messages = encryptedMessages.map((message) => ({
       ...message.toObject(),
@@ -124,11 +124,7 @@ const updateMessageStatus = async (
   }
 };
 
-const markMessagesAsRead = async (
-  sessionId: string,
-  senderId: string,
-  receiverId: string
-) => {
+const markMessagesAsRead = async (sessionId: string, receiverId: string) => {
   try {
     await MessageModel.updateMany(
       {
@@ -143,4 +139,30 @@ const markMessagesAsRead = async (
   }
 };
 
-export { storeMessage, loadMessages, updateMessageStatus, markMessagesAsRead };
+const getContactsStatus = async (userId: string) => {
+  try {
+    const user = await UserModel.findById(userId).populate("contacts").exec();
+
+    if (!user) {
+      return [];
+    }
+
+    const contactsStatus = user.contacts.map((contact) => ({
+      userId: contact._id,
+      //@ts-ignore
+      status: contact.status,
+    }));
+
+    return contactsStatus;
+  } catch (error: any) {
+    throw new InternalServerError("", error);
+  }
+};
+
+export {
+  storeMessage,
+  loadMessages,
+  updateMessageStatus,
+  markMessagesAsRead,
+  getContactsStatus,
+};
