@@ -1,4 +1,3 @@
-import ProfilePic from "../../assets/pouyaj.jpg";
 import { Avatar, Badge, Button, Col, Row } from "antd";
 import {
   ArrowLeftOutlined,
@@ -6,6 +5,7 @@ import {
   PhoneOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import { useSessionSelector } from "../../store/hooks";
 
 type HeaderProps = {
   isMobile: boolean;
@@ -13,6 +13,9 @@ type HeaderProps = {
 };
 
 const ChatHeader = ({ isMobile, toggleChatScreen }: HeaderProps) => {
+  const selectedSession = useSessionSelector(
+    (state) => state.session.selectedSession
+  );
   return (
     <>
       <div className="bg-white">
@@ -36,12 +39,12 @@ const ChatHeader = ({ isMobile, toggleChatScreen }: HeaderProps) => {
             push={isMobile ? undefined : 1}
           >
             <Avatar
-              src={ProfilePic}
+              // src={}
               size="large"
               style={{ transform: "scale(1.2)" }}
             />
             <div className="flex flex-col ml-2">
-              <h3 className="font-bold">Pouyaj</h3>
+              <h3 className="font-bold">{selectedSession?.id}</h3>
               <p className="opacity-50">last seen recently</p>
             </div>
           </Col>

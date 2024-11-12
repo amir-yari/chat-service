@@ -1,6 +1,5 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
-
 import storage from "redux-persist/lib/storage";
 import {
   FLUSH,
@@ -10,14 +9,12 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
-import { userSlice } from "./user-slice";
 
-import { messageSlice } from "./message-slice";
+import { userSlice } from "./user-slice";
 import { sessionSlice } from "./session-slice";
 
 const rootReducer = combineReducers({
   user: userSlice.reducer,
-  message: messageSlice.reducer,
   session: sessionSlice.reducer,
 });
 

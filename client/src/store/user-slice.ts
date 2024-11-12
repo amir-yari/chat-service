@@ -1,21 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-export type User = {
-  isLoggedin: boolean;
-  id?: string;
-  firstName: string;
-  lastName: string;
-  userName: string;
-  email: string;
-  profileImage: string;
-};
+import { User } from "../types/User";
 
 type UserState = {
-  user: User;
+  currentUser: User;
+  contacts: User[];
 };
 
 const initialState: UserState = {
-  user: {
+  currentUser: {
     isLoggedin: false,
     id: undefined,
     firstName: "",
@@ -24,14 +16,21 @@ const initialState: UserState = {
     email: "",
     profileImage: "",
   },
+  contacts: [],
 };
 
 export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUser(state, action: PayloadAction<Partial<User>>) {
-      state.user = { ...state.user, ...action.payload, isLoggedin: true };
+    setUser(state, action: PayloadAction<User>) {
+      state.currentUser = {
+        ...action.payload,
+        isLoggedin: true,
+      };
+    },
+    setContacts(state, action: PayloadAction<User[]>) {
+      state.contacts = action.payload;
     },
   },
 });

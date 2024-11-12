@@ -1,10 +1,9 @@
 import React from "react";
 import { Form, Input, Button } from "antd";
-import { useDispatch } from "react-redux";
-import { userActions } from "../store/user-slice";
-import { messageActions } from "../store/message-slice";
-import { sessionActions } from "../store/session-slice";
 import { useNavigate } from "react-router-dom";
+
+import { useUserDispatch } from "../store/hooks";
+import { userActions } from "../store/user-slice";
 
 interface FormValues {
   userID: string;
@@ -13,44 +12,14 @@ interface FormValues {
 
 const ChatConnectionForm: React.FC = () => {
   const [form] = Form.useForm();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const userDispatch = useUserDispatch();
+
   const onFinish = (values: FormValues) => {
-    const { userID, receiverID } = values;
+    const { userID } = values;
 
-    dispatch(userActions.setUser({ id: userID, isLoggedin: true }));
-    dispatch(
-      messageActions.saveMessage({
-        text: "Session started",
-        senderId: userID,
-        recieverId: receiverID,
-        sessionId: `${userID}-${receiverID}`,
-      })
-    );
-
-    dispatch(
-      sessionActions.addParticipant({
-        id: userID,
-        isLoggedin: true,
-        firstName: "",
-        lastName: "",
-        userName: "",
-        email: "",
-        profileImage: "",
-      })
-    );
-    dispatch(
-      sessionActions.addParticipant({
-        id: receiverID,
-        isLoggedin: false,
-        firstName: "",
-        lastName: "",
-        userName: "",
-        email: "",
-        profileImage: "",
-      })
-    );
+    userDispatch(userActions.setUser({ id: userID }));
 
     navigate("/home");
   };
@@ -71,18 +40,7 @@ const ChatConnectionForm: React.FC = () => {
         >
           <Input
             placeholder="Enter your User ID"
-            className="h-10 px-3 rounded-md bg-gray-700 text-white placeholder-gray-400"
-          />
-        </Form.Item>
-
-        <Form.Item
-          label={<span className="text-white">Receiver ID</span>}
-          name="receiverID"
-          rules={[{ required: true, message: "Please enter the Receiver ID!" }]}
-        >
-          <Input
-            placeholder="Enter the Receiver ID"
-            className="h-10 px-3 rounded-md bg-gray-700 text-white placeholder-gray-400"
+            className="h-10 px-3 rounded-md bg-gray-700 placeholder-gray-400"
           />
         </Form.Item>
 

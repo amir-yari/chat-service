@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "../store/store";
 import ChatHeader from "../components/chat-screen/ChatHeader";
 import ChatBody from "../components/chat-screen/ChatBody";
 import ChatMessageFooter from "../components/chat-screen/ChatMessageSending";
@@ -8,25 +6,35 @@ import { Splitter } from "antd";
 import HistoryChat from "../components/chat-history/HistoryChat";
 import { io, Socket } from "socket.io-client";
 
+import {
+  useSessionDispatch,
+  useSessionSelector,
+  useUserSelector,
+} from "../store/hooks";
+import { Message } from "../types/Message";
+import { sessionActions } from "../store/session-slice";
+
 const ChatPage = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [showChatScreen, setShowChatScreen] = useState(true);
-  const userID = useSelector((state: RootState) => state.user.user.id);
-  const receiverID = useSelector(
-    (state: RootState) => state.message.items[0]?.recieverId
-  );
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  const user = useUserSelector((state) => state.user.currentUser);
+  const session = useSessionSelector((state) => state.session);
+  const sessionDispatch = useSessionDispatch();
+  const sessionId = session.selectedSession?.id;
 
   const addMessage = (msg: string) => {
+    const receiverId = session.selectedSession!.participants.find(
+      (participantId) => participantId !== user.id
+    );
+
     socket?.emit("sendMessage", {
       text: msg,
-      senderId: userID,
-      receiverId: receiverID,
+      senderId: user.id,
+      receiverId: receiverId,
+      sessionId: "67304c83cf2e9904e8a39e66",
     });
-
-    setMessages((prevMessages) => [...prevMessages, msg]);
   };
 
   const toggleChatScreen = () => {
@@ -34,21 +42,37 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    const socketInstance = io("http://localhost:8000");
+    const socketInstance = io("http://localhost:8000", {
+      query: { userId: user.id },
+    });
     setSocket(socketInstance);
 
     socketInstance.on("connection", () => {
       console.log("Connected to Socket.IO server");
-      setIsConnected(true);
     });
 
     socketInstance.on("disconnect", () => {
       console.log("Disconnected from Socket.IO server");
-      setIsConnected(false);
     });
 
-    socketInstance.on("receiveMessage", (incomingMessage: string) => {
-      setMessages((prevMessages) => [...prevMessages, incomingMessage]);
+    socketInstance.on("receiveMessage", (message: Message) => {
+      sessionDispatch(
+        sessionActions.addSession({
+          id: message.sessionId,
+          participants: [message.senderId, message.receiverId],
+        })
+      );
+
+      sessionDispatch(
+        sessionActions.saveMessage({
+          sessionId: message.sessionId,
+          message,
+        })
+      );
+    });
+
+    socketInstance.on("error", (error) => {
+      console.log(error);
     });
 
     return () => {
@@ -92,7 +116,7 @@ const ChatPage = () => {
               isMobile={isMobile}
               toggleChatScreen={toggleChatScreen}
             />{" "}
-            <ChatBody messages={messages} />
+            <ChatBody />
             <ChatMessageFooter addMessage={addMessage} />
           </>
         ) : (
