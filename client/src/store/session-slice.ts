@@ -54,6 +54,67 @@ export const sessionSlice = createSlice({
         state.selectedSession.messages.push(message);
       }
     },
+    updateMessageStatusToDelivered(
+      state,
+      action: PayloadAction<{
+        _id: string;
+        sessionId: string;
+        status: any;
+        updatedAt: Date;
+      }>
+    ) {
+      const { _id, sessionId, status, updatedAt } = action.payload;
+
+      const session = state.items.find((sess) => sess.id === sessionId);
+      if (session && session.messages) {
+        const message = session.messages.find((msg) => msg._id === _id);
+        if (message) {
+          message.status = status;
+          message.updatedAt = updatedAt;
+        }
+      }
+
+      if (
+        state.selectedSession?.id === sessionId &&
+        state.selectedSession.messages
+      ) {
+        const message = state.selectedSession.messages.find(
+          (msg) => msg._id === _id
+        );
+        if (message) {
+          message.status = status;
+          message.updatedAt = updatedAt;
+        }
+      }
+    },
+    updateSessionStatusToRead(
+      state,
+      action: PayloadAction<{ sessionId: string; currentUserId: string }>
+    ) {
+      const { sessionId, currentUserId } = action.payload;
+
+      const session = state.items.find((sess) => sess.id === sessionId);
+      if (session && session.messages) {
+        session.messages.forEach((message) => {
+          if (message.senderId === currentUserId) {
+            message.status = "read";
+            // message.updatedAt = new Date();
+          }
+        });
+      }
+
+      if (
+        state.selectedSession?.id === sessionId &&
+        state.selectedSession.messages
+      ) {
+        state.selectedSession.messages.forEach((message) => {
+          if (message.senderId === currentUserId) {
+            message.status = "read";
+            // message.updatedAt = new Date();
+          }
+        });
+      }
+    },
   },
 });
 

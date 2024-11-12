@@ -24,16 +24,24 @@ const ChatPage = () => {
   const sessionDispatch = useSessionDispatch();
   const sessionId = session.selectedSession?.id;
 
-  const addMessage = (msg: string) => {
-    const receiverId = session.selectedSession!.participants.find(
-      (participantId) => participantId !== user.id
-    );
+  const receiverId = session.selectedSession!.participants.find(
+    (participantId) => participantId !== user.id
+  );
 
+  if (sessionId) {
+    socket?.emit("requestMessageRead", {
+      senderId: user.id,
+      receiverId: receiverId,
+      sessionId: sessionId,
+    });
+  }
+
+  const addMessage = (msg: string) => {
     socket?.emit("sendMessage", {
       text: msg,
       senderId: user.id,
       receiverId: receiverId,
-      sessionId: "67304c83cf2e9904e8a39e66",
+      sessionId: sessionId,
     });
   };
 
@@ -46,10 +54,6 @@ const ChatPage = () => {
       query: { userId: user.id },
     });
     setSocket(socketInstance);
-
-    socketInstance.on("connection", () => {
-      console.log("Connected to Socket.IO server");
-    });
 
     socketInstance.on("disconnect", () => {
       console.log("Disconnected from Socket.IO server");
@@ -67,6 +71,29 @@ const ChatPage = () => {
         sessionActions.saveMessage({
           sessionId: message.sessionId,
           message,
+        })
+      );
+    });
+
+    socketInstance.on("messageDelivered", (message: Message) => {
+      const { sessionId, _id, status, updatedAt } = message;
+
+      sessionDispatch(
+        sessionActions.updateMessageStatusToDelivered({
+          _id,
+          sessionId,
+          status,
+          updatedAt,
+        })
+      );
+    });
+
+    socketInstance.on("messageReadUpdate", (sessionId: string) => {
+      sessionDispatch(
+        sessionActions.updateSessionStatusToRead({
+          sessionId,
+          //@ts-ignore
+          currentUserId: user.id,
         })
       );
     });

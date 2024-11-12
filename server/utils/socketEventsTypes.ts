@@ -3,7 +3,12 @@ import { type Message } from "../models/messageModel";
 export interface ServerToClientEvent {
   receiveMessage: (message: Message) => void;
   error: (error: { message: string; details?: any[] }) => void;
-  messageDelivered: (message: Message) => void;
+  messageDelivered: (delivered: {
+    _id: string;
+    sessionId: string;
+    status: string;
+    updatedAt: Date;
+  }) => void;
   messageReadUpdate: (sessionId: string) => void;
   contactsStatus: (contactsStatus: any) => void;
 }

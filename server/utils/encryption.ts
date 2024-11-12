@@ -37,10 +37,14 @@ const decryptMessage = (encryptedMessage: EncryptedMessage): Message => {
   decrypted = Buffer.concat([decrypted, decipher.final()]);
 
   const message = {
+    _id: encryptedMessage._id,
     text: decrypted.toString(),
     senderId: encryptedMessage.senderId,
     receiverId: encryptedMessage.receiverId,
     sessionId: encryptedMessage.sessionId,
+    status: encryptedMessage.status,
+    createdAt: encryptedMessage.createdAt,
+    updatedAt: encryptedMessage.updatedAt,
   };
 
   return message;

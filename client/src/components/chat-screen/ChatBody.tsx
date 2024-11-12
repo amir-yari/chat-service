@@ -1,7 +1,6 @@
 import { CheckOutlined, MoreOutlined } from "@ant-design/icons";
 import { Dropdown } from "antd";
 import type { MenuProps } from "antd";
-
 import {
   useSessionDispatch,
   useSessionSelector,
@@ -10,7 +9,7 @@ import {
 import { useParams } from "react-router-dom";
 import { Message } from "../../types/Message";
 import { sessionActions } from "../../store/session-slice";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 const items: MenuProps["items"] = [
   {
@@ -34,6 +33,8 @@ const ChatBody = () => {
 
   const { sessionId } = useParams();
 
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (sessionId) {
       sessionDispatch(sessionActions.setSelectedSession(sessionId));
@@ -45,6 +46,12 @@ const ChatBody = () => {
     const currentSession = session.find((session) => session.id === sessionId);
     return currentSession?.messages || [];
   }, [session, sessionId]);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "instant" });
+    }
+  }, [allMessages]);
 
   return (
     <div className="flex flex-col flex-grow overflow-x-hidden overflow-y-auto gap-1">
@@ -70,9 +77,37 @@ const ChatBody = () => {
               {msg.text}
             </p>
             <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-              {msg.senderId === user.id ? <CheckOutlined /> : <></>}
+              {msg.senderId === user.id ? (
+                <span>
+                  {/* Check for sent status (just a single gray checkmark) */}
+                  {msg.status === "sent" && (
+                    <CheckOutlined style={{ color: "gray" }} />
+                  )}
+                  {/* Check for delivered status (gray checkmark) */}
+                  {msg.status === "delivered" && (
+                    <>
+                      <CheckOutlined style={{ color: "grey" }} />
+                      <CheckOutlined style={{ color: "grey" }} />
+                    </>
+                  )}
+                  {/* Check for read status (blue checkmark) */}
+                  {msg.status === "read" && (
+                    <>
+                      <CheckOutlined style={{ color: "blue" }} />
+                      <CheckOutlined style={{ color: "blue" }} />
+                    </>
+                  )}
+                </span>
+              ) : (
+                <></>
+              )}
+
               {"  "}
-              {new Date().toLocaleTimeString()}
+              {new Date(msg.createdAt).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}
             </span>
           </div>
           {msg.senderId === user.id && (
@@ -84,6 +119,7 @@ const ChatBody = () => {
           )}
         </div>
       ))}
+      <div ref={chatEndRef} />
     </div>
   );
 };

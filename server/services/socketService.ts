@@ -36,11 +36,11 @@ const sendMessageSchema = z.object({
   //       message: "Invalid ObjectID format for sessionId",
   //     })
   //     .optional(),
-  senderId: z.string().min(1, { message: "Message text must not be empty" }),
-  receiverId: z.string().min(1, { message: "Sender ID is required" }),
+  senderId: z.string().min(1, { message: "Sender ID is required" }),
+  receiverId: z.string().min(1, { message: "Receiver ID is required" }),
   sessionId: z
     .string()
-    .min(1, { message: "Receiver ID is required" })
+    .min(1, { message: "Session ID is required" })
     .optional(),
 });
 
@@ -57,11 +57,11 @@ const requestMessageReadSchema = z.object({
   //       message: "Invalid ObjectID format for sessionId",
   //     })
   //     .optional(),
-  senderId: z.string().min(1, { message: "Message text must not be empty" }),
-  receiverId: z.string().min(1, { message: "Sender ID is required" }),
+  senderId: z.string().min(1, { message: "Sender ID is required" }),
+  receiverId: z.string().min(1, { message: "Receiver ID is required" }),
   sessionId: z
     .string()
-    .min(1, { message: "Receiver ID is required" })
+    .min(1, { message: "Session ID is required" })
     .optional(),
 });
 
@@ -95,8 +95,8 @@ export const socketService = async () => {
       socket.on("sendMessage", async (data) => {
         try {
           //@ts-ignore
-          const parsedData = JSON.parse(data);
-          const result = await sendMessageSchema.safeParseAsync(parsedData);
+          //   const parsedData = JSON.parse(data);
+          const result = await sendMessageSchema.safeParseAsync(data);
           if (!result.success) {
             socket.emit("error", {
               message: "Invalid message data",
@@ -132,7 +132,7 @@ export const socketService = async () => {
             io.to(messageSessionId).emit("receiveMessage", decryptedMessage);
 
             savedMessage.status = MessageStatus.DELIVERED;
-            await updateMessageStatus(
+            const savedAndDeliveredMessage = await updateMessageStatus(
               //@ts-ignore
               savedMessage._id,
               savedMessage.status
@@ -141,7 +141,16 @@ export const socketService = async () => {
             const senderSocketId = userSocketMap.get(savedMessage.senderId);
             const senderSocket = io.sockets.sockets.get(senderSocketId);
             if (senderSocket) {
-              io.to(messageSessionId).emit("messageDelivered", savedMessage);
+              io.to(messageSessionId).emit("messageDelivered", {
+                //@ts-ignore
+                _id: savedAndDeliveredMessage._id,
+                //@ts-ignore
+                sessionId: savedAndDeliveredMessage.sessionId,
+                //@ts-ignore
+                status: savedAndDeliveredMessage.status,
+                //@ts-ignore
+                updatedAt: savedAndDeliveredMessage.updatedAt,
+              });
             } else {
               //TODO: handle the situation when the sender is not connected
             }
@@ -159,11 +168,9 @@ export const socketService = async () => {
       socket.on("requestMessageRead", async (data) => {
         try {
           //@ts-ignore
-          const parsedData = JSON.parse(data);
+          //   const parsedData = JSON.parse(data);
 
-          const result = await requestMessageReadSchema.safeParseAsync(
-            parsedData
-          );
+          const result = await requestMessageReadSchema.safeParseAsync(data);
 
           if (!result.success) {
             socket.emit("error", {
@@ -177,7 +184,7 @@ export const socketService = async () => {
           const senderId = result.data.senderId;
           const receiverId = result.data.receiverId;
 
-          await markMessagesAsRead(sessionId, receiverId);
+          const update = await markMessagesAsRead(sessionId, receiverId);
           const senderSocketId = userSocketMap.get(senderId);
           const senderSocket = io.sockets.sockets.get(senderSocketId);
 

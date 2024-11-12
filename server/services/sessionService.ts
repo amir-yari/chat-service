@@ -22,7 +22,7 @@ const storeMessage = async (message: Message) => {
       );
       if (session) {
         const encryptedMessage = encryptMessage(message);
-        const savedMessage = await MessageModel.create({
+        const savedMessage: Message = await MessageModel.create({
           text: encryptedMessage.text,
           senderId: encryptedMessage.senderId,
           receiverId: encryptedMessage.receiverId,
@@ -42,7 +42,7 @@ const storeMessage = async (message: Message) => {
       });
 
       const encryptedMessage = encryptMessage(message);
-      const savedMessage = await MessageModel.create({
+      const savedMessage: Message = await MessageModel.create({
         text: encryptedMessage.text,
         senderId: encryptedMessage.senderId,
         receiverId: encryptedMessage.receiverId,
