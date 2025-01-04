@@ -1,9 +1,9 @@
 export type User = {
   isLoggedin?: boolean;
-  id?: string;
-  firstName?: string;
-  lastName?: string;
-  userName?: string;
+  _id?: string;
+  firstname?: string;
+  lastname?: string;
+  username?: string;
   email?: string;
   profileImage?: string;
 };

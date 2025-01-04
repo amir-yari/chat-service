@@ -2,6 +2,8 @@ import http from "http";
 import api from "./app";
 import express from "express";
 import mongoose from "mongoose";
+import admin from "firebase-admin";
+import serviceAccount from "./serviceAccountKey.json";
 import { Server as SocketIOServer } from "socket.io";
 
 import { socketService } from "./services/socketService";
@@ -28,7 +30,12 @@ mongoose
     process.exit(1);
   });
 
-export const io = new SocketIOServer<ClientToServerEvent, ServerToClientEvent>(
+admin.initializeApp({
+  //@ts-ignore
+  credential: admin.credential.cert(serviceAccount),
+});
+
+const io = new SocketIOServer<ClientToServerEvent, ServerToClientEvent>(
   server,
   {
     cors: {
@@ -39,6 +46,24 @@ export const io = new SocketIOServer<ClientToServerEvent, ServerToClientEvent>(
 );
 
 socketService();
-io.use((socket, next) => {
-  next();
+
+io.use(async (socket, next) => {
+  const token = socket.handshake.query.token;
+
+  if (!token) {
+    next(new Error("Unauthorized: No token provided"));
+    return;
+  }
+
+  try {
+    // @ts-ignore
+    await admin.auth().verifyIdToken(token);
+
+    next();
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    next(new Error("Unauthorized: Invalid or expired token"));
+  }
 });
+
+export { admin, io };

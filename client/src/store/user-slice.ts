@@ -9,10 +9,10 @@ type UserState = {
 const initialState: UserState = {
   currentUser: {
     isLoggedin: false,
-    id: undefined,
-    firstName: "",
-    lastName: "",
-    userName: "",
+    _id: undefined,
+    firstname: "",
+    lastname: "",
+    username: "",
     email: "",
     profileImage: "",
   },
@@ -24,13 +24,16 @@ export const userSlice = createSlice({
   initialState,
   reducers: {
     setUser(state, action: PayloadAction<User>) {
-      state.currentUser = {
-        ...action.payload,
-        isLoggedin: true,
-      };
+      return { ...state, currentUser: action.payload };
+    },
+    setUserInfo(state, action: PayloadAction<User>) {
+      return { ...state, ...action.payload };
+    },
+    logoutUser() {
+      return initialState;
     },
     setContacts(state, action: PayloadAction<User[]>) {
-      state.contacts = action.payload;
+      return { ...state, contacts: action.payload };
     },
   },
 });

@@ -13,6 +13,7 @@ import {
 } from "../store/hooks";
 import { Message } from "../types/Message";
 import { sessionActions } from "../store/session-slice";
+import { auth } from "../firebase";
 
 const ChatPage = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -24,14 +25,14 @@ const ChatPage = () => {
   const sessionDispatch = useSessionDispatch();
   const sessionId = session.selectedSession?.id;
 
-  const receiverId = session.selectedSession!.participants.find(
-    (participantId) => participantId !== user.id
-  );
+  // const receiverId = session.selectedSession!.participants.find(
+  //   (participantId) => participantId !== user._id
+  // );
 
   if (sessionId) {
     socket?.emit("requestMessageRead", {
-      senderId: user.id,
-      receiverId: receiverId,
+      senderId: user._id,
+      // receiverId: receiverId,
       sessionId: sessionId,
     });
   }
@@ -39,8 +40,8 @@ const ChatPage = () => {
   const addMessage = (msg: string) => {
     socket?.emit("sendMessage", {
       text: msg,
-      senderId: user.id,
-      receiverId: receiverId,
+      senderId: user._id,
+      receiverId: "testReceiverId",
       sessionId: sessionId,
     });
   };
@@ -50,62 +51,77 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    const socketInstance = io("http://localhost:8000", {
-      query: { userId: user.id },
-    });
-    setSocket(socketInstance);
+    const fetchTokenAndSetupSocket = async () => {
+      try {
+        const unsubscribe = auth.onIdTokenChanged(async (firebaseUser) => {
+          if (firebaseUser) {
+            const token = await firebaseUser.getIdToken();
 
-    socketInstance.on("disconnect", () => {
-      console.log("Disconnected from Socket.IO server");
-    });
+            const socketInstance = io("http://localhost:8000", {
+              query: { userId: user._id, token },
+            });
 
-    socketInstance.on("receiveMessage", (message: Message) => {
-      sessionDispatch(
-        sessionActions.addSession({
-          id: message.sessionId,
-          participants: [message.senderId, message.receiverId],
-        })
-      );
+            setSocket(socketInstance);
 
-      sessionDispatch(
-        sessionActions.saveMessage({
-          sessionId: message.sessionId,
-          message,
-        })
-      );
-    });
+            socketInstance.on("disconnect", () => {
+              console.log("Disconnected from Socket.IO server");
+            });
 
-    socketInstance.on("messageDelivered", (message: Message) => {
-      const { sessionId, _id, status, updatedAt } = message;
+            socketInstance.on("receiveMessage", (message: Message) => {
+              sessionDispatch(
+                sessionActions.addSession({
+                  id: message.sessionId,
+                  participants: [message.senderId, message.receiverId],
+                })
+              );
 
-      sessionDispatch(
-        sessionActions.updateMessageStatusToDelivered({
-          _id,
-          sessionId,
-          status,
-          updatedAt,
-        })
-      );
-    });
+              sessionDispatch(
+                sessionActions.saveMessage({
+                  sessionId: message.sessionId,
+                  message,
+                })
+              );
+            });
 
-    socketInstance.on("messageReadUpdate", (sessionId: string) => {
-      sessionDispatch(
-        sessionActions.updateSessionStatusToRead({
-          sessionId,
-          //@ts-ignore
-          currentUserId: user.id,
-        })
-      );
-    });
+            socketInstance.on("messageDelivered", (message: Message) => {
+              const { sessionId, _id, status, updatedAt } = message;
 
-    socketInstance.on("error", (error) => {
-      console.log(error);
-    });
+              sessionDispatch(
+                sessionActions.updateMessageStatusToDelivered({
+                  _id,
+                  sessionId,
+                  status,
+                  updatedAt,
+                })
+              );
+            });
 
-    return () => {
-      socketInstance.disconnect();
+            socketInstance.on("messageReadUpdate", (sessionId: string) => {
+              sessionDispatch(
+                sessionActions.updateSessionStatusToRead({
+                  sessionId,
+                  //@ts-ignore
+                  currentUserId: user._id,
+                })
+              );
+            });
+
+            socketInstance.on("error", (error) => {
+              console.log(error);
+            });
+
+            return () => socketInstance.disconnect();
+          }
+        });
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("Failed to initialize token and socket:", error);
+      }
     };
-  }, []);
+
+    fetchTokenAndSetupSocket();
+  }, [user._id]);
 
   useEffect(() => {
     const handleResize = () => {

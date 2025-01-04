@@ -2,9 +2,10 @@ import mongoose, { Schema } from "mongoose";
 
 export interface User {
   _id: mongoose.Types.ObjectId;
+  firebaseUid: string;
   firstName: string;
   lastName?: string;
-  username: string;
+  // username: string;
   email: string;
   profileImage?: string;
   contacts: mongoose.Types.ObjectId[];
@@ -16,18 +17,19 @@ export interface User {
 
 const userSchema: Schema<User> = new mongoose.Schema(
   {
+    firebaseUid: { type: String, required: true },
     firstName: {
       type: String,
-      required: true,
+      // required: true,
     },
     lastName: {
       type: String,
     },
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+    // username: {
+    //   type: String,
+    //   required: true,
+    //   unique: true,
+    // },
     email: {
       type: String,
       required: true,
@@ -39,22 +41,22 @@ const userSchema: Schema<User> = new mongoose.Schema(
       type: [mongoose.Schema.Types.ObjectId],
       ref: "User",
     },
-    status: {
-      type: new mongoose.Schema({
-        isOnline: {
-          type: Boolean,
-          required: true,
-          default: false,
-        },
-        lastSeen: {
-          type: Date,
-          required: true,
-          default: Date.now,
-        },
-      }),
-      required: true,
-      default: {},
-    },
+    // status: {
+    //   type: new mongoose.Schema({
+    //     isOnline: {
+    //       type: Boolean,
+    //       required: true,
+    //       default: false,
+    //     },
+    //     lastSeen: {
+    //       type: Date,
+    //       required: true,
+    //       default: Date.now,
+    //     },
+    //   }),
+    //   required: true,
+    //   default: {},
+    // },
   },
   { timestamps: true }
 );

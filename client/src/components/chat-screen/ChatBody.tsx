@@ -59,13 +59,13 @@ const ChatBody = () => {
         <div
           key={index}
           className={`flex gap-2 max-w-[800px] w-full mx-auto ${
-            msg.senderId === user.id ? "justify-end" : "justify-start"
+            msg.senderId === user._id ? "justify-end" : "justify-start"
           }`}
           dir="ltr"
         >
           <div
             className={`flex flex-col max-w-[90%] w-fit h-fit p-2 border-gray-200 ${
-              msg.senderId === user.id
+              msg.senderId === user._id
                 ? "bg-blue-100 dark:bg-blue-800 rounded-e-xl rounded-es-xl"
                 : "bg-gray-100 dark:bg-gray-700 rounded-s-xl rounded-se-xl"
             } m-[3px]`}
@@ -77,7 +77,7 @@ const ChatBody = () => {
               {msg.text}
             </p>
             <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-              {msg.senderId === user.id ? (
+              {msg.senderId === user._id ? (
                 <span>
                   {/* Check for sent status (just a single gray checkmark) */}
                   {msg.status === "sent" && (
@@ -110,7 +110,7 @@ const ChatBody = () => {
               })}
             </span>
           </div>
-          {msg.senderId === user.id && (
+          {msg.senderId === user._id && (
             <Dropdown menu={{ items }} className="mt-10">
               <a onClick={(e) => e.preventDefault()}>
                 <MoreOutlined />

@@ -1,14 +1,15 @@
-// import { RequestHandler } from "express";
-// import UserModel from "../models/userModel";
+import { RequestHandler } from "express";
 
-// const getCurrentUser: RequestHandler = async (req, res, next) => {
-//   try {
-//     const user = await UserModel.findById(req.user)
-//       .populate("contacts", "firstName lastName username email profileImage")
-//       .exec();
+const getCurrentUser: RequestHandler = async (req, res) => {
+  try {
+    // @ts-ignore
+    res.status(200).json(req.user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching the user" });
+  }
+};
 
-//     return user;
-//   } catch (error) {}
-// };
-
-// export { getCurrentUser };
+export { getCurrentUser };
